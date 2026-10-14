@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>わたしの本棚</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://lh3.googleusercontent.com/d/1lwaTR-CFX3oC3s86I29h8Pi9M-UO8qtY">
+<link rel="icon" href="https://lh3.googleusercontent.com/d/1lwaTR-CFX3oC3s86I29h8Pi9M-UO8qtY">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="本棚">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+  // ▼ GASをデプロイしたときに表示される「ウェブアプリのURL」（/exec で終わるもの）を貼り付け
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwkKZ_C-9p4MeXnkBcplRhINbT9_Kixi7RLlHmmiNlurotOFZNp5DTarfX9E3PtEteZJg/exec';
+</script>
+
+<style>
+  :root {
+    --paper: #F3F4F1;
+    --surface: #FFFFFF;
+    --ink: #1F2A44;
+    --muted: #6B7280;
+    --line: #DADDD6;
+    --own: #3B5BA5;      /* 所持 */
+    --wish: #B8456A;     /* ほしい */
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+  body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--own); outline-offset: 2px; }
+
+  header { padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 8px; max-width: 960px; margin: 0 auto; position: relative; }
+  h1 { font-family: var(--serif); font-size: 1.75rem; margin: 0 0 4px; letter-spacing: .04em; }
+  .summary { color: var(--muted); font-size: .875rem; margin: 0; }
+  .settings { position: absolute; right: 12px; top: calc(20px + env(safe-area-inset-top, 0px)); border: 0; background: none; color: var(--muted); padding: 6px; }
+
+  .tools { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 8px 16px 10px; max-width: 960px; margin: 0 auto; }
+  .search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 16px; }
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  .sort-control { display: flex; justify-content: flex-end; padding-top: 8px; }
+  .sort-control[hidden] { display: none; }
+  .sort-button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: .8rem; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: .875rem; }
+  .chip .n { color: var(--muted); margin-left: 4px; font-size: .8rem; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chip[aria-pressed="true"] .n { color: #C9CEDB; }
+
+  .shelf { max-width: 960px; margin: 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .book { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 13px 14px;
+          background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .book-cover { flex: none; width: 48px; height: 68px; border-radius: 4px; overflow: hidden; background: #E8E9E4;
+                display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: .7rem; }
+  .book-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .book-main { flex: 1; min-width: 0; }
+  .book-title { display: block; margin: 0; font-family: var(--serif); font-size: 1rem; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+  .book-meta { display: block; margin: 3px 0 0; color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+  .book-status { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .book-status span { padding: 3px 8px; border-radius: 999px; color: #fff; background: var(--own); font-size: .7rem; }
+  .book-status .wish { background: var(--wish); } .book-status .reading { background: var(--ink); }
+  .book-arrow { color: var(--muted); font-size: 1.3rem; }
+
+  .empty { text-align: center; color: var(--muted); padding: 48px 16px; line-height: 1.8; }
+
+  .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+         background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 14px 28px; font-weight: 700; font-size: 1rem;
+         box-shadow: 0 6px 18px rgba(31,42,68,.3); display: flex; gap: 8px; align-items: center; }
+
+  .sheet-bg { position: fixed; inset: 0; background: rgba(20,24,36,.45); z-index: 20; display: none; }
+  .sheet-bg.open { display: block; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; background: var(--surface); border-radius: 16px 16px 0 0;
+           max-height: 92vh; overflow-y: auto; padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+           transform: translateY(100%); transition: transform .22s ease-out; max-width: 640px; margin: 0 auto; }
+  .sheet.open { transform: none; }
+  @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+  .sheet h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0 0 12px; }
+  .close { float: right; border: 0; background: none; font-size: 1.4rem; line-height: 1; padding: 4px 8px; color: var(--muted); }
+
+  #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #111; }
+  #reader:empty { display: none; }
+  #reader video { display: block; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row input { flex: 1 1 auto; min-width: 0; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 16px; }
+  .row .btn { flex: none; white-space: nowrap; }
+  .row.split > * { flex: 1; }
+  .btn { border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 16px; font-weight: 700; text-align: center; }
+  .btn.ghost { background: var(--surface); color: var(--ink); }
+  .btn.danger { background: var(--surface); color: #B42318; border-color: #E4B4AF; }
+  .hint { color: var(--muted); font-size: .8rem; margin: 8px 0 0; line-height: 1.6; }
+  .status { min-height: 1.4em; font-size: .875rem; margin: 10px 0 0; }
+
+  .cover-preview { margin: 0 0 12px; text-align: center; }
+  .cover-preview img { max-width: 140px; max-height: 190px; object-fit: contain; border-radius: 4px;
+                       box-shadow: 0 3px 12px rgba(31,42,68,.18); }
+  .field { display: block; margin-top: 10px; font-size: .8rem; color: var(--muted); }
+  .field input, .field textarea { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font-size: 16px; }
+  .two { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+  fieldset { border: 0; padding: 0; margin: 14px 0 0; }
+  legend { font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
+  .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .seg.three { grid-template-columns: repeat(3, 1fr); }
+  .seg label { position: relative; }
+  .seg input { position: absolute; opacity: 0; }
+  .seg span { display: block; text-align: center; padding: 9px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .85rem; }
+  .seg input:checked + span { color: #fff; border-color: transparent; background: var(--ink); }
+  .seg input[value="所持"]:checked + span { background: var(--own); }
+  .seg input[value="ほしい"]:checked + span { background: var(--wish); }
+  .seg label.is-disabled { opacity: .42; cursor: not-allowed; }
+  .seg input:focus-visible + span { outline: 2px solid var(--own); outline-offset: 2px; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; }
+  .actions .btn:last-child { flex: 1; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+           background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: .875rem; z-index: 30; display: none; }
+  .credit { max-width: 960px; margin: 8px auto 24px; padding: 0 16px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>わたしの本棚</h1>
+  <p class="summary" id="summary">読み込み中…</p>
+  <button class="settings" id="openSettings" type="button" aria-label="合言葉の設定">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
+  </button>
+</header>
+
+<div class="tools">
+  <input class="search" id="q" type="search" placeholder="タイトル・著者・出版社で探す">
+  <div class="filters" id="filters" role="group" aria-label="絞り込み"></div>
+  <div class="sort-control" id="sortControl" hidden>
+    <button class="sort-button" id="sortButton" type="button" aria-label="巻数の並び順を切り替え">巻数：昇順 ↑</button>
+  </div>
+</div>
+
+<main class="shelf" id="shelf"></main>
+
+<footer class="credit">
+<!-- Rakuten Web Services Attribution Snippet FROM HERE -->
+<a href="https://webservice.rakuten.co.jp/" target="_blank"><img src="https://webservice.rakuten.co.jp/img/credit/200709/credit_22121.gif" border="0" alt="Rakuten Web Service Center" title="Rakuten Web Service Center" width="221" height="21"/></a>
+<!-- Rakuten Web Services Attribution Snippet TO HERE -->
+</footer>
+
+<button class="fab" id="openScan" type="button">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+  本を追加
+</button>
+
+<div class="sheet-bg" id="bg"></div>
+
+<!-- 合言葉設定シート -->
+<section class="sheet" id="tokenSheet" aria-labelledby="tokenTitle" role="dialog">
+  <h2 id="tokenTitle">合言葉を入力</h2>
+  <p class="hint">GASで作成した合言葉を入力してください。この端末のブラウザにだけ保存されます。</p>
+  <div class="row">
+    <input id="tokenInput" type="password" autocomplete="off" placeholder="合言葉" aria-label="合言葉">
+    <button class="btn" type="button" id="tokenSave">保存</button>
+  </div>
+  <p class="status" id="tokenStatus" role="status"></p>
+</section>
+
+<!-- 読み取りシート -->
+<section class="sheet" id="scanSheet" aria-labelledby="scanTitle" role="dialog">
+  <button class="close" type="button" data-close aria-label="閉じる">×</button>
+  <h2 id="scanTitle">バーコードを読み取る</h2>
+  <div id="reader"></div>
+  <p class="hint">裏表紙の「978」または「979」で始まるバーコードを枠に合わせてください。</p>
+  <div class="row split">
+    <button class="btn ghost" type="button" id="startCam">カメラを起動</button>
+    <label class="btn ghost" for="photo">写真から読み取る</label>
+    <input id="photo" type="file" accept="image/*" hidden>
+  </div>
+  <div class="row">
+    <input id="isbnInput" inputmode="numeric" placeholder="ISBNを手入力" aria-label="ISBN（10桁・13桁）">
+    <button class="btn" type="button" id="lookupBtn">検索</button>
+  </div>
+  <div class="row">
+    <button class="btn ghost" type="button" id="manualBtn" style="flex:1">ISBNなしで手入力する</button>
+  </div>
+  <p class="status" id="scanStatus" role="status"></p>
+</section>
+
+<!-- 編集シート -->
+<section class="sheet" id="editSheet" aria-labelledby="editTitle" role="dialog">
+  <button class="close" type="button" data-close aria-label="閉じる">×</button>
+  <h2 id="editTitle">本の情報</h2>
+  <p class="status" id="editNotice" role="status" hidden></p>
+  <div class="cover-preview" id="coverPreviewWrap" hidden><img id="coverPreview" alt="書影"></div>
+  <label class="field">タイトル<input id="f_title"></label>
+  <label class="field">著者<input id="f_author"></label>
+  <div class="two">
+    <label class="field">巻数<input id="f_volume" inputmode="numeric"></label>
+    <label class="field">出版社<input id="f_publisher"></label>
+  </div>
+  <label class="field">ISBN<input id="f_isbn" inputmode="numeric"></label>
+
+  <fieldset>
+    <legend>手元にあるか</legend>
+    <div class="seg" id="ownSeg">
+      <label><input type="radio" name="own" value="所持"><span>持っている</span></label>
+      <label><input type="radio" name="own" value="ほしい"><span>ほしい</span></label>
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>読書状況</legend>
+    <div class="seg three">
+      <label><input type="radio" name="read" value="未読"><span>未読</span></label>
+      <label><input type="radio" name="read" value="読書中"><span>読書中</span></label>
+      <label><input type="radio" name="read" value="既読"><span>読んだ</span></label>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn danger" type="button" id="deleteBtn">削除</button>
+    <button class="btn" type="button" id="saveBtn">本棚に保存</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- 合言葉（この端末にだけ保存） ---------- */
+const TOKEN_KEY = 'bookshelf_token';
+function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+function setToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
+
+/* ---------- API呼び出し ---------- */
+class AuthError extends Error {}
+async function api(action, payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    // text/plain にすることで、GAS側でエラーになりやすい事前確認（プリフライト）を避ける
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: getToken(), action, payload })
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    if (data.error === 'unauthorized') throw new AuthError('unauthorized');
+    throw new Error(data.message || data.error);
+  }
+  return data.data;
+}
+
+/* ---------- 状態 ---------- */
+let books = [];
+let filter = 'all';
+let volumeSort = 'asc';
+let editing = null;
+let busy = false;
+let scanner = null;
+
+const OWN_CLASS = { '所持': 'own', 'ほしい': 'wish' };
+const OWN_LABEL = { '所持': '持っている', 'ほしい': 'ほしい' };
+const FILTERS = [
+  { key: 'all',      label: 'すべて', test: b => ['所持', 'ほしい'].includes(b.ownership) },
+  { key: 'shelf',    label: '本棚',   test: b => b.ownership === '所持' },
+  { key: 'tsundoku', label: '積読',   test: b => b.ownership === '所持' && b.readStatus === '未読' },
+  { key: 'reading',  label: '読書中', test: b => b.ownership === '所持' && b.readStatus === '読書中' },
+  { key: 'done',     label: '読んだ本', test: b => b.ownership === '所持' && b.readStatus === '既読' },
+  { key: 'wish',     label: 'ほしい本', test: b => b.ownership === 'ほしい' }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.style.display = 'none', 2200);
+}
+
+/* ---------- 一覧表示 ---------- */
+function renderFilters() {
+  $('filters').innerHTML = FILTERS.map(f =>
+    `<button class="chip" type="button" data-f="${f.key}" aria-pressed="${f.key === filter}">${f.label}<span class="n">${books.filter(f.test).length}</span></button>`
+  ).join('');
+}
+
+function render() {
+  const q = $('q').value.trim().toLowerCase();
+  const f = FILTERS.find(x => x.key === filter);
+  const activeBooks = books.filter(b => ['所持', 'ほしい'].includes(b.ownership));
+  const list = activeBooks.filter(f.test).filter(b =>
+    !q || [b.title, b.author, b.publisher, b.isbn].join(' ').toLowerCase().includes(q));
+  const seriesOnly = list.length > 0 && list.every(b => String(b.volume || '').trim() !== '');
+  $('sortControl').hidden = !seriesOnly;
+  $('sortButton').textContent = volumeSort === 'asc' ? '巻数：昇順 ↑' : '巻数：降順 ↓';
+  if (seriesOnly) {
+    const collator = new Intl.Collator('ja', { numeric: true, sensitivity: 'base' });
+    const direction = volumeSort === 'asc' ? 1 : -1;
+    list.sort((a, b) => direction * (
+      collator.compare(String(a.volume), String(b.volume)) ||
+      collator.compare(String(a.title || ''), String(b.title || ''))
+    ));
+  }
+
+  const owned = activeBooks.filter(b => b.ownership === '所持').length;
+  const read = activeBooks.filter(b => b.ownership === '所持' && b.readStatus === '既読').length;
+  $('summary').textContent = `${activeBooks.length}冊を記録中　本棚に${owned}冊、読んだ本は${read}冊`;
+  renderFilters();
+
+  if (!list.length) {
+    $('shelf').innerHTML = `<p class="empty">${activeBooks.length
+      ? '条件に合う本はありません。'
+      : 'まだ本がありません。<br>下の「本を追加」からバーコードを読み取ってください。'}</p>`;
+    return;
+  }
+  $('shelf').innerHTML = list.map(b => `
+    <button class="book" type="button" data-id="${esc(b.id)}">
+      <span class="book-cover">${b.cover ? `<img src="${esc(b.cover)}" alt="${esc(b.title)}の書影" loading="lazy">` : '書影なし'}</span>
+      <span class="book-main">
+        <span class="book-title">${esc(b.title)}${b.volume ? ' ' + esc(b.volume) + '巻' : ''}</span>
+        <span class="book-meta">${[b.author, b.publisher].filter(Boolean).map(esc).join(' · ') || '著者・出版社未登録'}</span>
+        <span class="book-status"><span class="${OWN_CLASS[b.ownership] || 'own'}">${esc(OWN_LABEL[b.ownership] || '')}</span><span class="reading">${esc(b.readStatus || '')}</span></span>
+      </span>
+      <span class="book-arrow" aria-hidden="true">›</span>
+    </button>`).join('');
+  $('shelf').querySelectorAll('.book-cover img').forEach(img => {
+    img.addEventListener('error', () => { img.parentElement.textContent = '書影なし'; });
+  });
+}
+
+async function load() {
+  if (!getToken()) { openTokenSheet(); return; }
+  try { books = await api('list'); render(); }
+  catch (e) {
+    if (e instanceof AuthError) { openTokenSheet('合言葉が違います。もう一度入力してください。'); return; }
+    $('summary').textContent = '読み込めませんでした。ページを再読み込みしてください。';
+  }
+}
+
+/* ---------- シート開閉 ---------- */
+function openSheet(id) {
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+  $('bg').classList.add('open'); $(id).classList.add('open');
+}
+async function closeSheets() {
+  if ($('tokenSheet').classList.contains('open') && !getToken()) return; // 合言葉未設定なら閉じない
+  await stopCamera();
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+  $('bg').classList.remove('open');
+}
+
+/* ---------- 合言葉 ---------- */
+function openTokenSheet(msg) {
+  $('tokenStatus').textContent = msg || '';
+  $('tokenInput').value = '';
+  openSheet('tokenSheet');
+}
+async function saveToken() {
+  const t = $('tokenInput').value.trim();
+  if (!t) return;
+  const prev = getToken();
+  setToken(t);
+  $('tokenStatus').textContent = '確認しています…';
+  try {
+    await api('ping');
+    $('tokenStatus').textContent = '';
+    await closeSheets();
+    toast('合言葉を保存しました');
+    load();
+  } catch (e) {
+    setToken(prev);
+    $('tokenStatus').textContent = e instanceof AuthError
+      ? '合言葉が違います。'
+      : '接続できませんでした。API_URLの設定を確認してください。';
+  }
+}
+
+/* ---------- バーコード読み取り ---------- */
+const isIsbnCode = text => /^97[89]\d{10}$/.test(text);
+
+function getScanner() {
+  if (!scanner) {
+    scanner = new Html5Qrcode('reader', {
+      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false
+    });
+  }
+  return scanner;
+}
+
+async function startCamera() {
+  if (scanner && scanner.isScanning) return;
+  $('scanStatus').textContent = 'カメラを起動しています…';
+  try {
+    await getScanner().start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: (w) => ({ width: Math.min(w * 0.85, 320), height: 110 }) },
+      async text => {
+        if (!isIsbnCode(text) || busy) return;
+        if (navigator.vibrate) navigator.vibrate(60);
+        await stopCamera();
+        lookup(text);
+      },
+      () => {}
+    );
+    $('scanStatus').textContent = '上段の978〜のバーコードを枠に合わせてください';
+  } catch (e) {
+    $('scanStatus').textContent = 'カメラを起動できませんでした。カメラの使用を許可するか、「写真から読み取る」を使ってください。';
+  }
+}
+
+async function stopCamera() {
+  if (scanner && scanner.isScanning) { try { await scanner.stop(); } catch (e) {} }
+  if (scanner) { try { scanner.clear(); } catch (e) {} }
+}
+
+async function scanPhoto(file) {
+  if (!file) return;
+  await stopCamera();
+  $('scanStatus').textContent = '画像を解析しています…';
+  try {
+    const text = await getScanner().scanFile(file, false);
+    if (isIsbnCode(text)) lookup(text);
+    else $('scanStatus').textContent = '価格コード（192〜）を読み取りました。978〜のバーコードを中心に撮り直してください。';
+  } catch (e) {
+    $('scanStatus').textContent = 'バーコードが見つかりませんでした。バーコードを大きく写してください。';
+  }
+  $('photo').value = '';
+}
+
+/* ---------- ISBN検索 ---------- */
+async function lookup(isbn) {
+  if (busy) return; busy = true;
+  $('scanStatus').textContent = `ISBN ${isbn} を検索しています…`;
+  try {
+    const res = await api('lookup', { isbn });
+    if (!res.ok) {
+      $('scanStatus').textContent = res.message + '。手入力で登録できます。';
+      if (res.isbn) openEditor({ isbn: res.isbn, ownership: '所持', readStatus: '未読', _notice: res.message + '。書名などを確認・入力して保存してください。' }, true);
+      return;
+    }
+    const exists = books.find(b => b.isbn === res.book.isbn);
+    if (exists) { toast('この本はすでに登録されています'); openEditor(exists, false); return; }
+    openEditor(Object.assign(res.book, { ownership: '所持', readStatus: '未読' }), true);
+  } catch (e) {
+    if (e instanceof AuthError) { openTokenSheet('合言葉が違います。'); return; }
+    $('scanStatus').textContent = '検索に失敗しました。通信状況を確認してもう一度試してください。';
+  } finally { busy = false; }
+}
+
+/* ---------- 編集 ---------- */
+function openEditor(book, isNew) {
+  stopCamera();
+  editing = Object.assign({}, book);
+  editing._isNew = isNew;
+  $('editTitle').textContent = isNew ? '本棚に追加' : '本の情報';
+  $('editNotice').textContent = book._notice || '';
+  $('editNotice').hidden = !book._notice;
+  ['title', 'author', 'volume', 'publisher', 'isbn'].forEach(k => $('f_' + k).value = book[k] || '');
+  const ownership = ['所持', 'ほしい'].includes(book.ownership) ? book.ownership : '所持';
+  const readStatus = ownership === 'ほしい' ? '未読' :
+    (['未読', '読書中', '既読'].includes(book.readStatus) ? book.readStatus : '未読');
+  document.querySelectorAll('input[name=own]').forEach(r => r.checked = r.value === ownership);
+  document.querySelectorAll('input[name=read]').forEach(r => r.checked = r.value === readStatus);
+  updateReadStatusAvailability();
+  $('deleteBtn').style.display = isNew ? 'none' : '';
+  $('saveBtn').textContent = isNew ? '本棚に保存' : '変更を保存';
+  editing.cover = book.cover || '';
+  $('coverPreviewWrap').hidden = !editing.cover;
+  $('coverPreview').onerror = () => { $('coverPreviewWrap').hidden = true; };
+  if (editing.cover) $('coverPreview').src = editing.cover;
+  openSheet('editSheet');
+}
+
+async function save() {
+  const b = {
+    id: editing.id || '',
+    isbn: $('f_isbn').value.replace(/[^0-9Xx]/g, ''),
+    title: $('f_title').value.trim(),
+    author: $('f_author').value.trim(),
+    volume: $('f_volume').value.trim(),
+    publisher: $('f_publisher').value.trim(),
+    cover: editing.cover || '',
+    ownership: document.querySelector('input[name=own]:checked').value,
+    readStatus: document.querySelector('input[name=read]:checked').value,
+    allowDuplicate: true
+  };
+  if (!b.title) { toast('タイトルを入力してください'); return; }
+  $('saveBtn').disabled = true;
+  try {
+    const res = await api('save', b);
+    if (res.ok) { toast(editing._isNew ? '本棚に保存しました' : '変更を保存しました'); await closeSheets(); await load(); }
+  } catch (e) { toast('保存できませんでした。もう一度試してください'); }
+  finally { $('saveBtn').disabled = false; }
+}
+
+async function remove() {
+  if (!confirm(`「${editing.title}」を削除しますか？`)) return;
+  try { await api('delete', { id: editing.id }); toast('削除しました'); await closeSheets(); await load(); }
+  catch (e) { toast('削除できませんでした'); }
+}
+
+function updateReadStatusAvailability() {
+  const isWish = document.querySelector('input[name=own]:checked')?.value === 'ほしい';
+  document.querySelectorAll('input[name=read]').forEach(r => {
+    const disabled = isWish && r.value !== '未読';
+    r.disabled = disabled;
+    r.closest('label').classList.toggle('is-disabled', disabled);
+    if (isWish && r.value === '未読') r.checked = true;
+  });
+}
+
+/* ---------- イベント ---------- */
+$('filters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-f]'); if (!btn) return;
+  filter = btn.dataset.f; render();
+});
+$('sortButton').addEventListener('click', () => {
+  volumeSort = volumeSort === 'asc' ? 'desc' : 'asc';
+  render();
+});
+$('ownSeg').addEventListener('change', updateReadStatusAvailability);
+$('q').addEventListener('input', render);
+$('shelf').addEventListener('click', e => {
+  const btn = e.target.closest('[data-id]'); if (!btn) return;
+  openEditor(books.find(b => b.id === btn.dataset.id), false);
+});
+$('openScan').addEventListener('click', () => {
+  $('scanStatus').textContent = ''; $('isbnInput').value = '';
+  openSheet('scanSheet');
+  startCamera();
+});
+$('startCam').addEventListener('click', startCamera);
+$('photo').addEventListener('change', e => scanPhoto(e.target.files[0]));
+$('lookupBtn').addEventListener('click', () => {
+  const v = $('isbnInput').value.replace(/[^0-9Xx]/g, '');
+  if (v.length !== 10 && v.length !== 13) { $('scanStatus').textContent = 'ISBNは10桁か13桁で入力してください'; return; }
+  stopCamera();
+  lookup(v);
+});
+$('manualBtn').addEventListener('click', () => openEditor({ ownership: '所持', readStatus: '未読' }, true));
+$('saveBtn').addEventListener('click', save);
+$('deleteBtn').addEventListener('click', remove);
+$('tokenSave').addEventListener('click', saveToken);
+$('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveToken(); });
+$('openSettings').addEventListener('click', () => openTokenSheet());
+$('bg').addEventListener('click', closeSheets);
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeSheets));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheets(); });
+
+load();
+</script>
+</body>
+</html>
