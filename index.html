@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>わたしの本棚</title>
-<link rel="apple-touch-icon" sizes="180x180" href="https://lh3.googleusercontent.com/d/1lwaTR-CFX3oC3s86I29h8Pi9M-UO8qtY">
-<link rel="icon" href="https://lh3.googleusercontent.com/d/1lwaTR-CFX3oC3s86I29h8Pi9M-UO8qtY">
+<!-- アイコン画像は index.html と同じ場所にアップロードしてください -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="本棚">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,8 +84,8 @@
   .sheet h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0 0 12px; }
   .close { float: right; border: 0; background: none; font-size: 1.4rem; line-height: 1; padding: 4px 8px; color: var(--muted); }
 
-  #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #111; }
-  #reader:empty { display: none; }
+  #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #111; display: none; }
+  #reader.active { display: block; min-height: 200px; }
   #reader video { display: block; }
   .row { display: flex; gap: 8px; margin-top: 10px; }
   .row input { flex: 1 1 auto; min-width: 0; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 16px; }
@@ -390,10 +391,17 @@ function getScanner() {
 async function startCamera() {
   if (scanner && scanner.isScanning) return;
   $('scanStatus').textContent = 'カメラを起動しています…';
+  $('reader').classList.add('active');   // 幅を確定させてから起動する
   try {
     await getScanner().start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: (w) => ({ width: Math.min(w * 0.85, 320), height: 110 }) },
+      {
+        fps: 10,
+        qrbox: (w, h) => ({
+          width: Math.max(Math.min(Math.floor(w * 0.85), 320), 120),
+          height: Math.max(Math.min(110, Math.floor(h * 0.6)), 60)
+        })
+      },
       async text => {
         if (!isIsbnCode(text) || busy) return;
         if (navigator.vibrate) navigator.vibrate(60);
@@ -404,13 +412,16 @@ async function startCamera() {
     );
     $('scanStatus').textContent = '上段の978〜のバーコードを枠に合わせてください';
   } catch (e) {
-    $('scanStatus').textContent = 'カメラを起動できませんでした。カメラの使用を許可するか、「写真から読み取る」を使ってください。';
+    $('reader').classList.remove('active');
+    const detail = (e && (e.name || e.message)) ? `（${e.name || ''} ${e.message || e}）` : `（${e}）`;
+    $('scanStatus').textContent = 'カメラを起動できませんでした' + detail + '。「写真から読み取る」も使えます。';
   }
 }
 
 async function stopCamera() {
   if (scanner && scanner.isScanning) { try { await scanner.stop(); } catch (e) {} }
   if (scanner) { try { scanner.clear(); } catch (e) {} }
+  $('reader').classList.remove('active');
 }
 
 async function scanPhoto(file) {
