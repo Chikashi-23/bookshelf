@@ -37,6 +37,9 @@
   button { cursor: pointer; }
   :focus-visible { outline: 2px solid var(--own); outline-offset: 2px; }
 
+  /* 背景の本棚：iPhone でも固定表示されるよう専用レイヤーに敷く */
+  .bg{position:fixed;inset:0;z-index:-1;background:#E8E9E4 url(bg.jpg) center top/cover no-repeat;pointer-events:none}
+
   header { padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 8px; max-width: 960px; margin: 0 auto; position: relative; }
   h1 { font-family: var(--serif); font-size: 1.75rem; margin: 0 0 4px; letter-spacing: .04em; }
   .summary { color: var(--muted); font-size: .875rem; margin: 0; }
