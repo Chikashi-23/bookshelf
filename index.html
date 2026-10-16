@@ -16,6 +16,34 @@
 <script>
   // ▼ GASをデプロイしたときに表示される「ウェブアプリのURL」（/exec で終わるもの）を貼り付け
   const API_URL = 'https://script.google.com/macros/s/AKfycbwkKZ_C-9p4MeXnkBcplRhINbT9_Kixi7RLlHmmiNlurotOFZNp5DTarfX9E3PtEteZJg/exec';
+
+  /* ---------- ヘッダー固定用：高さを計測して main の余白を設定 ---------- */
+  function updateTopOffsets() {
+    const header = document.querySelector('header');
+    const tools = document.querySelector('.tools');
+    const headerH = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+    const toolsH = tools ? Math.ceil(tools.getBoundingClientRect().height) : 0;
+    // header の高さを --header-height にセット（tools の top に使う）
+    document.documentElement.style.setProperty('--header-height', headerH + 'px');
+    // 合計を --top-offset にセット（main.shelf の padding-top に使う）
+    document.documentElement.style.setProperty('--top-offset', (headerH + toolsH) + 'px');
+  }
+  
+  // DOMロード後とリサイズ時に再計算
+  window.addEventListener('load', () => {
+    // 少し遅らせてフォントや画像によるレイアウト変化を吸収
+    setTimeout(updateTopOffsets, 50);
+  });
+  window.addEventListener('resize', () => {
+    clearTimeout(window._topOffsetTimer);
+    window._topOffsetTimer = setTimeout(updateTopOffsets, 80);
+  });
+  
+  // もしシートの開閉でヘッダー高さが変わるなら、openSheet / closeSheets の末尾に
+  // updateTopOffsets(); を追加すると即時反映されます。
+  // 例（既存の openSheet 関数内の最後に追記）:
+  // function openSheet(id) { ...; updateTopOffsets(); }
+  // 同様に closeSheets の最後にも updateTopOffsets(); を呼んでください。
 </script>
 
 <style>
@@ -41,12 +69,14 @@
   /* 背景の本棚：iPhone でも固定表示されるよう専用レイヤーに敷く */
   .bg{position:fixed;inset:0;z-index:-1;background:#E8E9E4 url(bg.jpg) center top/cover no-repeat;pointer-events:none}
 
-  header { padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 8px; max-width: 960px; margin: 0 auto; position: relative; }
+  header { padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 8px; max-width: 960px; margin: 0 auto; position: sticky; top: 0; z-index: 60;
+  background: rgba(243,244,241,0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(0,0,0,0.06);
+  position: sticky; top: 0; z-index: 6; }
   h1 { font-family: var(--serif); font-size: 1.75rem; margin: 0 0 4px; letter-spacing: .04em; }
   .summary { color: var(--muted); font-size: .875rem; margin: 0; }
   .settings { position: absolute; right: 12px; top: calc(20px + env(safe-area-inset-top, 0px)); border: 0; background: none; color: var(--muted); padding: 6px; }
 
-  .tools { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 8px 16px 10px; max-width: 960px; margin: 0 auto; }
+  .tools { position: sticky; top: var(--header-height, 0px); z-index: 55; background: rgba(243,244,241,0.54); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 8px 16px 10px; max-width: 960px; margin: 0 auto; }
   .search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 16px; }
   .filters { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; scrollbar-width: none; }
   .filters::-webkit-scrollbar { display: none; }
@@ -58,7 +88,7 @@
   .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
   .chip[aria-pressed="true"] .n { color: #C9CEDB; }
 
-  .shelf { max-width: 960px; margin: 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .shelf { max-width: 960px; margin: 0 auto; padding: calc(var(--top-offset, 0px) + 8px) 16px 8px; display: flex; flex-direction: column; gap: 8px; }
   .book { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 13px 14px;
           background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
   .book-cover { flex: none; width: 48px; height: 68px; border-radius: 4px; overflow: hidden; background: #E8E9E4;
