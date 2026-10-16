@@ -31,7 +31,8 @@
     --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+  html, body { margin: 0; background: transparent; color: var(--ink); font-family: var(--sans); } 
+  .bg { position: fixed; inset: 0; z-index: -1; background: var(--paper) url(bg.jpg) center top/cover no-repeat; pointer-events: none; }
   body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
