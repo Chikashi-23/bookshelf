@@ -9,6 +9,7 @@
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="本棚">
+<meta name="theme-color" content="#F3F4F1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -31,32 +32,42 @@
     --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
-  body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  html { background: var(--paper); }
+  body { margin: 0; background: transparent; color: var(--ink); font-family: var(--sans);
+         padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
   :focus-visible { outline: 2px solid var(--own); outline-offset: 2px; }
 
-  header { padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 8px; max-width: 960px; margin: 0 auto; position: relative; }
-  h1 { font-family: var(--serif); font-size: 1.75rem; margin: 0 0 4px; letter-spacing: .04em; }
-  .summary { color: var(--muted); font-size: .875rem; margin: 0; }
-  .settings { position: absolute; right: 12px; top: calc(20px + env(safe-area-inset-top, 0px)); border: 0; background: none; color: var(--muted); padding: 6px; }
+  /* 背景：スクロールしても動かないよう専用レイヤーに敷く（画像は同じ場所の bg.jpg） */
+  .bg { position: fixed; inset: 0; z-index: -1; background: var(--paper) url(bg.jpg) center top / cover no-repeat; pointer-events: none; }
 
-  .tools { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 8px 16px 10px; max-width: 960px; margin: 0 auto; }
-  .search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 16px; }
+  /* ヘッダー：タイトル・冊数・検索・絞り込みをまとめて上に固定し、すりガラスのぼかしをかける */
+  .appbar { position: sticky; top: 0; z-index: 5; background: rgba(243,244,241,.78);
+            -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(218,221,214,.9); }
+  .appbar .wrap { max-width: 960px; margin: 0 auto; position: relative;
+                  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  h1 { font-family: var(--serif); font-size: 1.6rem; margin: 0 0 2px; letter-spacing: .04em; padding-right: 40px; }
+  .summary { color: var(--muted); font-size: .85rem; margin: 0; }
+  .settings { position: absolute; right: 10px; top: calc(14px + env(safe-area-inset-top, 0px)); border: 0; background: none; color: var(--muted); padding: 6px; }
+
+  .search { width: 100%; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.9); font-size: 16px; }
   .filters { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; scrollbar-width: none; }
   .filters::-webkit-scrollbar { display: none; }
   .sort-control { display: flex; justify-content: flex-end; padding-top: 8px; }
   .sort-control[hidden] { display: none; }
   .sort-button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: .8rem; }
-  .chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: .875rem; }
+  .chip { flex: none; border: 1px solid var(--line); background: rgba(255,255,255,.9); border-radius: 999px; padding: 6px 12px; font-size: .875rem; }
   .chip .n { color: var(--muted); margin-left: 4px; font-size: .8rem; }
   .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
   .chip[aria-pressed="true"] .n { color: #C9CEDB; }
 
-  .shelf { max-width: 960px; margin: 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
+  /* 一覧：カードを少し透かして、後ろの背景がうっすら見えるようにする */
+  .shelf { max-width: 960px; margin: 0 auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
   .book { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 13px 14px;
-          background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+          background: rgba(255,255,255,.88); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+          border: 1px solid rgba(218,221,214,.85); border-radius: 10px; box-shadow: 0 1px 3px rgba(31,42,68,.08); }
   .book-cover { flex: none; width: 48px; height: 68px; border-radius: 4px; overflow: hidden; background: #E8E9E4;
                 display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: .7rem; }
   .book-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -68,11 +79,11 @@
   .book-status .wish { background: var(--wish); } .book-status .reading { background: var(--ink); }
   .book-arrow { color: var(--muted); font-size: 1.3rem; }
 
-  .empty { text-align: center; color: var(--muted); padding: 48px 16px; line-height: 1.8; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 16px; line-height: 1.8; background: rgba(255,255,255,.9); border-radius: 10px; }
 
   .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px));
           background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 14px 28px; font-weight: 700; font-size: 1rem;
-          box-shadow: 0 6px 18px rgba(31,42,68,.3); display: flex; gap: 8px; align-items: center; }
+          box-shadow: 0 6px 18px rgba(31,42,68,.3); display: flex; gap: 8px; align-items: center; z-index: 6; }
 
   .sheet-bg { position: fixed; inset: 0; background: rgba(20,24,36,.45); z-index: 20; display: none; }
   .sheet-bg.open { display: block; }
@@ -94,8 +105,17 @@
   .btn { border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 16px; font-weight: 700; text-align: center; }
   .btn.ghost { background: var(--surface); color: var(--ink); }
   .btn.danger { background: var(--surface); color: #B42318; border-color: #E4B4AF; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
   .hint { color: var(--muted); font-size: .8rem; margin: 8px 0 0; line-height: 1.6; }
   .status { min-height: 1.4em; font-size: .875rem; margin: 10px 0 0; }
+
+  /* 保存・削除中のローディング */
+  .btn.is-busy { opacity: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent;
+             display: inline-block; animation: spin .7s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
+  .sheet.is-busy .field, .sheet.is-busy fieldset, .sheet.is-busy .close { opacity: .5; pointer-events: none; }
 
   .cover-preview { margin: 0 0 12px; text-align: center; }
   .cover-preview img { max-width: 140px; max-height: 190px; object-fit: contain; border-radius: 4px;
@@ -121,25 +141,26 @@
   .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
             background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: .875rem; z-index: 30; display: none; }
   .credit { max-width: 960px; margin: 8px auto 24px; padding: 0 16px; text-align: center; }
+  .credit a { display: inline-block; padding: 6px 10px; background: rgba(255,255,255,.9); border-radius: 8px; }
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"></div>
 
-<header>
-  <h1>わたしのほんだな</h1>
-  <p class="summary" id="summary">読み込み中…</p>
-  <button class="settings" id="openSettings" type="button" aria-label="合言葉の設定">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
-  </button>
-</header>
-
-<div class="tools">
-  <input class="search" id="q" type="search" placeholder="タイトル・著者・出版社で探す">
-  <div class="filters" id="filters" role="group" aria-label="絞り込み"></div>
-  <div class="sort-control" id="sortControl" hidden>
-    <button class="sort-button" id="sortButton" type="button" aria-label="巻数の並び順を切り替え">巻数：昇順 ↑</button>
+<header class="appbar">
+  <div class="wrap">
+    <h1>わたしのほんだな</h1>
+    <p class="summary" id="summary">読み込み中…</p>
+    <button class="settings" id="openSettings" type="button" aria-label="合言葉の設定">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
+    </button>
+    <input class="search" id="q" type="search" placeholder="タイトル・著者・出版社で探す">
+    <div class="filters" id="filters" role="group" aria-label="絞り込み"></div>
+    <div class="sort-control" id="sortControl" hidden>
+      <button class="sort-button" id="sortButton" type="button" aria-label="巻数の並び順を切り替え">巻数：昇順 ↑</button>
+    </div>
   </div>
-</div>
+</header>
 
 <main class="shelf" id="shelf"></main>
 
@@ -255,6 +276,7 @@ let filter = 'all';
 let volumeSort = 'asc';
 let editing = null;
 let busy = false;
+let saving = false;      // 保存・削除の処理中
 let scanner = null;
 
 const OWN_CLASS = { '所持': 'own', 'ほしい': 'wish' };
@@ -342,10 +364,31 @@ function openSheet(id) {
   $('bg').classList.add('open'); $(id).classList.add('open');
 }
 async function closeSheets() {
-  if ($('tokenSheet').classList.contains('open') && !getToken()) return; // 合言葉未設定なら閉じない
+  if (saving) return;                                                      // 保存中は閉じない
+  if ($('tokenSheet').classList.contains('open') && !getToken()) return;   // 合言葉未設定なら閉じない
   await stopCamera();
   document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
   $('bg').classList.remove('open');
+}
+
+/* ---------- 保存・削除中の表示 ---------- */
+function setSaving(on, btn, label) {
+  saving = on;
+  $('editSheet').classList.toggle('is-busy', on);
+  $('saveBtn').disabled = on;
+  $('deleteBtn').disabled = on;
+  if (on) {
+    btn.dataset.label = btn.textContent;
+    btn.classList.add('is-busy');
+    btn.innerHTML = `<span class="spinner" aria-hidden="true"></span>${esc(label)}`;
+    btn.setAttribute('aria-busy', 'true');
+  } else {
+    [$('saveBtn'), $('deleteBtn')].forEach(b => {
+      if (b.dataset.label) { b.textContent = b.dataset.label; delete b.dataset.label; }
+      b.classList.remove('is-busy');
+      b.removeAttribute('aria-busy');
+    });
+  }
 }
 
 /* ---------- 合言葉 ---------- */
@@ -483,6 +526,7 @@ function openEditor(book, isNew) {
 }
 
 async function save() {
+  if (saving) return;
   const b = {
     id: editing.id || '',
     isbn: $('f_isbn').value.replace(/[^0-9Xx]/g, ''),
@@ -496,18 +540,34 @@ async function save() {
     allowDuplicate: true
   };
   if (!b.title) { toast('タイトルを入力してください'); return; }
-  $('saveBtn').disabled = true;
+  setSaving(true, $('saveBtn'), '保存中…');
   try {
     const res = await api('save', b);
-    if (res.ok) { toast(editing._isNew ? '本棚に保存しました' : '変更を保存しました'); await closeSheets(); await load(); }
+    if (res.ok) {
+      await load();                 // 一覧を最新にしてから閉じる
+      setSaving(false);
+      await closeSheets();
+      toast(editing._isNew ? '本棚に保存しました' : '変更を保存しました');
+      return;
+    }
+    toast('保存できませんでした。もう一度試してください');
   } catch (e) { toast('保存できませんでした。もう一度試してください'); }
-  finally { $('saveBtn').disabled = false; }
+  setSaving(false);
 }
 
 async function remove() {
+  if (saving) return;
   if (!confirm(`「${editing.title}」を削除しますか？`)) return;
-  try { await api('delete', { id: editing.id }); toast('削除しました'); await closeSheets(); await load(); }
-  catch (e) { toast('削除できませんでした'); }
+  setSaving(true, $('deleteBtn'), '削除中…');
+  try {
+    await api('delete', { id: editing.id });
+    await load();
+    setSaving(false);
+    await closeSheets();
+    toast('削除しました');
+    return;
+  } catch (e) { toast('削除できませんでした'); }
+  setSaving(false);
 }
 
 function updateReadStatusAvailability() {
