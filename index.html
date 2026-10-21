@@ -8,6 +8,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="本棚">
 <meta name="theme-color" content="#F3F4F1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,7 +41,7 @@
   :focus-visible { outline: 2px solid var(--own); outline-offset: 2px; }
 
   /* 背景：スクロールしても動かないよう専用レイヤーに敷く（画像は同じ場所の bg.jpg） */
-  .bg { position: fixed; top: 0; left: 0; right: 0; bottom: -120px; z-index: -1; background: var(--paper) url(bg.jpg) center top / cover no-repeat; pointer-events: none; }
+  .bg { position: fixed; top: 0; left: 0; right: 0; height:100vh; height:100lvh;; z-index: -1; background: var(--paper) url(bg.jpg) center top / cover no-repeat; pointer-events: none; }
   @media (orientation: portrait) { .bg { background-image: url(bg-sp.jpg); } }
   
   /* ヘッダー：タイトル・冊数・検索・絞り込みをまとめて上に固定し、すりガラスのぼかしをかける */
